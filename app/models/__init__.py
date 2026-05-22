@@ -1,3 +1,4 @@
-from app.models.user import User, UserCreate, UserResponse
+from app.models.user import User
+from app.models.wallet import Transaction, Wallet
 
-__all__ = ["User"]
+__all__ = ["User", "Wallet", "Transaction"]

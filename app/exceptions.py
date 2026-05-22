@@ -20,3 +20,11 @@ class InvalidTokenException(Exception):
 
 class ValidationException(Exception):
     pass
+
+
+class WalletAlreadyExistsException(Exception):
+    pass
+
+
+class WalletNotFoundException(Exception):
+    pass

@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.users import router as users_router
+from app.api.wallets import router as wallets_router
 from app.exceptions import InvalidTokenException, InactiveUserException
 from shared.config import API_PREFIX, DESCRIPTION, PROJECT_NAME, VERSION
 
@@ -23,6 +24,7 @@ async def inactive_user_handler(request: Request, exc: InactiveUserException):
 app.include_router(health_router)
 app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(users_router, prefix=API_PREFIX)
+app.include_router(wallets_router, prefix=API_PREFIX)
 
 
 @app.get("/")

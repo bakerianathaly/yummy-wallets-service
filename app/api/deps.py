@@ -9,11 +9,9 @@ from app.db.sessions import get_db
 from app.exceptions import InactiveUserException, InvalidTokenException, UserNotFoundException
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-# from app.services.surgical_history.surgical_history_service import (
-#     SurgicalHistoryUseCase,
-# )
-
+from app.repositories.wallet_repository import WalletRepository
 from app.services.user.user_service import UserService
+from app.services.wallet import WalletService
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
@@ -47,3 +45,15 @@ async def get_current_user(
         raise InactiveUserException("El usuario está desactivado")
 
     return user
+
+
+class WalletDeps:
+    @staticmethod
+    def get_repository(db: AsyncSession = Depends(get_db)) -> WalletRepository:
+        return WalletRepository(db)
+
+    @staticmethod
+    def get_service(
+        repo: WalletRepository = Depends(get_repository),
+    ) -> WalletService:
+        return WalletService(repo)
