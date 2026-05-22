@@ -10,7 +10,7 @@ from app.exceptions import (
 )
 from app.models.api_response import APIResponse
 from app.models.user import LoginRequest, TokenResponse, UserCreate, UserResponse
-from app.services.user import UserService
+from app.services.user.user_service import UserService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

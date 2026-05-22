@@ -9,7 +9,7 @@ from app.exceptions import (
 )
 from app.models.api_response import APIResponse
 from app.models.user import User, UserResponse, UserUpdate
-from app.services.user import UserService
+from app.services.user.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
 

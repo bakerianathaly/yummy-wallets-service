@@ -9,8 +9,11 @@ from app.db.sessions import get_db
 from app.exceptions import InactiveUserException, InvalidTokenException, UserNotFoundException
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.services.user import UserService
+# from app.services.surgical_history.surgical_history_service import (
+#     SurgicalHistoryUseCase,
+# )
 
+from app.services.user.user_service import UserService
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
