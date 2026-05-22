@@ -1,106 +1,64 @@
-from decimal import Decimal
-
 import pytest
 
-from app.exceptions import ProductoYaExisteException, ValidationException
-from app.models.producto import ProductoCreate
-from app.services.producto import ProductoService
+from app.exceptions import UserAlreadyExistsException, ValidationException
+from app.models.user import UserCreate
+from app.services.user import UserService
 
 
-class TestCrearProducto:
-    async def test_crear_producto_exitoso(
+class TestCreateUser:
+    async def test_create_user_exitoso(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
     ):
-        producto = await service.crear.execute(producto_data)
+        user = await service.create.execute(user_data)
 
-        assert producto.nombre == producto_data.nombre
-        assert producto.descripcion == producto_data.descripcion
-        assert producto.precio == producto_data.precio
-        assert producto.stock == producto_data.stock
-        assert producto.id is not None
+        assert user.id is not None
+        assert user.email == user_data.email.lower().strip()
+        assert user.full_name == user_data.full_name.strip()
+        assert user.is_active is True
 
-    async def test_crear_producto_duplicado(
+    async def test_create_user_email_duplicado(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
     ):
-        await service.crear.execute(producto_data)
+        await service.create.execute(user_data)
 
-        with pytest.raises(ProductoYaExisteException):
-            await service.crear.execute(producto_data)
+        with pytest.raises(UserAlreadyExistsException):
+            await service.create.execute(user_data)
 
-    async def test_crear_producto_precio_negativo(self, service: ProductoService):
-        data = ProductoCreate(
-            nombre="Producto Test",
-            precio=Decimal("-5.00"),
-            stock=10,
-        )
+    async def test_create_user_email_invalido(self, service: UserService):
+        data = UserCreate(email="no-es-email", full_name="Test", password="Password123")
 
         with pytest.raises(ValidationException) as exc:
-            await service.crear.execute(data)
+            await service.create.execute(data)
 
-        assert "precio" in str(exc.value).lower()
+        assert "email" in str(exc.value).lower()
 
-    async def test_crear_producto_precio_cero(self, service: ProductoService):
-        data = ProductoCreate(
-            nombre="Producto Test",
-            precio=Decimal("0.00"),
-            stock=10,
-        )
+    async def test_create_user_password_corta(self, service: UserService):
+        data = UserCreate(email="test@test.com", full_name="Test", password="short")
 
         with pytest.raises(ValidationException) as exc:
-            await service.crear.execute(data)
+            await service.create.execute(data)
 
-        assert "precio" in str(exc.value).lower()
+        assert "contraseña" in str(exc.value).lower()
 
-    async def test_crear_producto_stock_negativo(self, service: ProductoService):
-        data = ProductoCreate(
-            nombre="Producto Test",
-            precio=Decimal("100.00"),
-            stock=-5,
-        )
+    async def test_create_user_nombre_corto(self, service: UserService):
+        data = UserCreate(email="test@test.com", full_name="A", password="Password123")
 
         with pytest.raises(ValidationException) as exc:
-            await service.crear.execute(data)
-
-        assert "stock" in str(exc.value).lower()
-
-    async def test_crear_producto_stock_mayor_10000(self, service: ProductoService):
-        data = ProductoCreate(
-            nombre="Producto Test",
-            precio=Decimal("100.00"),
-            stock=10001,
-        )
-
-        with pytest.raises(ValidationException) as exc:
-            await service.crear.execute(data)
-
-        assert "stock" in str(exc.value).lower()
-
-    async def test_crear_producto_nombre_menor_3_caracteres(
-        self, service: ProductoService
-    ):
-        data = ProductoCreate(
-            nombre="  AB  ",
-            precio=Decimal("100.00"),
-            stock=10,
-        )
-
-        with pytest.raises(ValidationException) as exc:
-            await service.crear.execute(data)
+            await service.create.execute(data)
 
         assert "nombre" in str(exc.value).lower()
 
-    async def test_crear_producto_sin_descripcion(self, service: ProductoService):
-        data = ProductoCreate(
-            nombre="Producto Sin Desc",
-            precio=Decimal("50.00"),
-            stock=5,
+    async def test_create_user_email_normalizado(self, service: UserService):
+        data = UserCreate(
+            email="  TEST@YUMMY.COM  ",
+            full_name="Test User",
+            password="Password123",
         )
 
-        producto = await service.crear.execute(data)
+        user = await service.create.execute(data)
 
-        assert producto.nombre == "Producto Sin Desc"
-        assert producto.descripcion is None
+        assert user.email == "test@yummy.com"

@@ -1,14 +1,22 @@
-class ProductoNotFoundException(Exception):
+class UserNotFoundException(Exception):
     pass
 
 
-class ProductoYaExisteException(Exception):
+class UserAlreadyExistsException(Exception):
+    pass
+
+
+class InvalidPasswordException(Exception):
+    pass
+
+
+class InactiveUserException(Exception):
+    pass
+
+
+class InvalidTokenException(Exception):
     pass
 
 
 class ValidationException(Exception):
-    pass
-
-
-class ListaVaciaException(Exception):
     pass

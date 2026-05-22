@@ -1,25 +1,43 @@
-from uuid import uuid4
+from app.models.user import LoginRequest, UserCreate
+from app.services.user import UserService
+from app.exceptions import InactiveUserException
+import pytest
 
-from app.models.producto import ProductoCreate
-from app.services.producto import ProductoService
 
-
-class TestEliminarProducto:
-    async def test_eliminar_producto_existente(
+class TestDeleteUser:
+    async def test_delete_desactiva_usuario(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
     ):
-        producto_creado = await service.crear.execute(producto_data)
+        user = await service.create.execute(user_data)
+        assert user.is_active is True
 
-        resultado = await service.eliminar.execute(producto_creado.id)
+        deactivated = await service.delete.execute(user)
 
-        assert resultado is True
+        assert deactivated.is_active is False
 
-        producto = await service.leer.obtener(producto_creado.id)
-        assert producto is None
+    async def test_token_invalido_despues_de_delete(
+        self,
+        service: UserService,
+        user_data: UserCreate,
+    ):
+        user = await service.create.execute(user_data)
+        await service.delete.execute(user)
 
-    async def test_eliminar_producto_inexistente(self, service: ProductoService):
-        resultado = await service.eliminar.execute(uuid4())
+        with pytest.raises(InactiveUserException):
+            await service.login.execute(
+                LoginRequest(email=user_data.email, password=user_data.password)
+            )
 
-        assert resultado is False
+    async def test_delete_actualiza_updated_at(
+        self,
+        service: UserService,
+        user_data: UserCreate,
+    ):
+        user = await service.create.execute(user_data)
+        original_updated_at = user.updated_at
+
+        deactivated = await service.delete.execute(user)
+
+        assert deactivated.updated_at >= original_updated_at

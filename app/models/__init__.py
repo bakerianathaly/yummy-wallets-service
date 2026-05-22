@@ -1,3 +1,3 @@
-from app.models.producto import Producto, ProductoCreate, ProductoResponse
+from app.models.user import User, UserCreate, UserResponse
 
-__all__ = ["Producto", "ProductoCreate", "ProductoResponse"]
+__all__ = ["User"]

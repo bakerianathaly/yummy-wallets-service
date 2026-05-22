@@ -1,106 +1,96 @@
-from decimal import Decimal
-from uuid import uuid4
-
 import pytest
 
-from app.exceptions import ProductoNotFoundException, ValidationException
-from app.models.producto import ProductoCreate, ProductoUpdate
-from app.services.producto import ProductoService
+from app.exceptions import (
+    InactiveUserException,
+    UserAlreadyExistsException,
+    ValidationException,
+)
+from app.models.user import UserCreate, UserUpdate
+from app.services.user import UserService
 
 
-class TestActualizarProducto:
-    async def test_actualizar_nombre(
+class TestUpdateUser:
+    async def test_update_full_name(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
     ):
-        producto_creado = await service.crear.execute(producto_data)
+        user = await service.create.execute(user_data)
 
-        actualizado = await service.actualizar.execute(
-            producto_creado.id,
-            ProductoUpdate(nombre="Nombre Nuevo"),
+        updated = await service.update.execute(user, UserUpdate(full_name="Nuevo Nombre"))
+
+        assert updated.full_name == "Nuevo Nombre"
+        assert updated.email == user.email
+
+    async def test_update_email(
+        self,
+        service: UserService,
+        user_data: UserCreate,
+    ):
+        user = await service.create.execute(user_data)
+
+        updated = await service.update.execute(
+            user, UserUpdate(email="nuevo@yummy.com")
         )
 
-        assert actualizado.nombre == "Nombre Nuevo"
-        assert actualizado.precio == producto_creado.precio
+        assert updated.email == "nuevo@yummy.com"
 
-    async def test_actualizar_precio(
+    async def test_update_password(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
     ):
-        producto_creado = await service.crear.execute(producto_data)
+        user = await service.create.execute(user_data)
 
-        actualizado = await service.actualizar.execute(
-            producto_creado.id,
-            ProductoUpdate(precio=Decimal("250.00")),
+        updated = await service.update.execute(
+            user, UserUpdate(password="NuevaPassword123")
         )
 
-        assert actualizado.precio == Decimal("250.00")
-        assert actualizado.nombre == producto_creado.nombre
+        assert updated.hashed_password != user_data.password
 
-    async def test_actualizar_stock(
+    async def test_update_email_duplicado(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
+        user_data_2: UserCreate,
     ):
-        producto_creado = await service.crear.execute(producto_data)
+        user1 = await service.create.execute(user_data)
+        await service.create.execute(user_data_2)
 
-        actualizado = await service.actualizar.execute(
-            producto_creado.id,
-            ProductoUpdate(stock=50),
-        )
+        with pytest.raises(UserAlreadyExistsException):
+            await service.update.execute(user1, UserUpdate(email=user_data_2.email))
 
-        assert actualizado.stock == 50
-
-    async def test_actualizar_producto_inexistente(self, service: ProductoService):
-        with pytest.raises(ProductoNotFoundException):
-            await service.actualizar.execute(
-                uuid4(),
-                ProductoUpdate(nombre="Nuevo Nombre"),
-            )
-
-    async def test_actualizar_precio_negativo(
+    async def test_update_usuario_inactivo(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
     ):
-        producto_creado = await service.crear.execute(producto_data)
+        user = await service.create.execute(user_data)
+        await service.delete.execute(user)
+
+        with pytest.raises(InactiveUserException):
+            await service.update.execute(user, UserUpdate(full_name="Nuevo"))
+
+    async def test_update_password_corta(
+        self,
+        service: UserService,
+        user_data: UserCreate,
+    ):
+        user = await service.create.execute(user_data)
 
         with pytest.raises(ValidationException) as exc:
-            await service.actualizar.execute(
-                producto_creado.id,
-                ProductoUpdate(precio=Decimal("-10.00")),
-            )
+            await service.update.execute(user, UserUpdate(password="short"))
 
-        assert "precio" in str(exc.value).lower()
+        assert "contraseña" in str(exc.value).lower()
 
-    async def test_actualizar_stock_negativo(
+    async def test_update_email_invalido(
         self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
+        service: UserService,
+        user_data: UserCreate,
     ):
-        producto_creado = await service.crear.execute(producto_data)
+        user = await service.create.execute(user_data)
 
         with pytest.raises(ValidationException) as exc:
-            await service.actualizar.execute(
-                producto_creado.id,
-                ProductoUpdate(stock=-5),
-            )
+            await service.update.execute(user, UserUpdate(email="no-es-email"))
 
-        assert "stock" in str(exc.value).lower()
-
-    async def test_actualizar_nombre_corto(
-        self,
-        service: ProductoService,
-        producto_data: ProductoCreate,
-    ):
-        producto_creado = await service.crear.execute(producto_data)
-
-        with pytest.raises(ValidationException) as exc:
-            await service.actualizar.execute(
-                producto_creado.id,
-                ProductoUpdate(nombre="AB"),
-            )
-
-        assert "nombre" in str(exc.value).lower()
+        assert "email" in str(exc.value).lower()

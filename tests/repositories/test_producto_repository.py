@@ -1,138 +1,76 @@
-from decimal import Decimal
 from uuid import uuid4
 
-from app.models.producto import ProductoCreate
-from app.repositories.producto_repository import ProductoRepository
+import pytest
+
+from app.models.user import UserCreate
+from app.repositories.user_repository import UserRepository
+from app.models.user import User
 
 
-class TestProductoRepository:
-    async def test_create_producto(
+class TestUserRepository:
+    async def test_create_user(
         self,
-        repo: ProductoRepository,
-        producto_data: ProductoCreate,
+        repo: UserRepository,
+        user_data: UserCreate,
     ):
-        producto = await repo.create(producto_data)
+        user = User(
+            email=user_data.email,
+            full_name=user_data.full_name,
+            hashed_password="hashed",
+        )
+        created = await repo.create(user)
 
-        assert producto.nombre == producto_data.nombre
-        assert producto.descripcion == producto_data.descripcion
-        assert producto.precio == producto_data.precio
-        assert producto.stock == producto_data.stock
-        assert producto.id is not None
+        assert created.id is not None
+        assert created.email == user_data.email
+        assert created.full_name == user_data.full_name
+        assert created.is_active is True
 
-    async def test_get_by_id_existente(
-        self,
-        repo: ProductoRepository,
-        producto_data: ProductoCreate,
-    ):
-        producto_creado = await repo.create(producto_data)
+    async def test_get_by_id_existente(self, repo: UserRepository, user_data: UserCreate):
+        user = await repo.create(
+            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+        )
 
-        producto = await repo.get_by_id(producto_creado.id)
+        found = await repo.get_by_id(user.id)
 
-        assert producto is not None
-        assert producto.id == producto_creado.id
-        assert producto.nombre == producto_data.nombre
+        assert found is not None
+        assert found.id == user.id
 
-    async def test_get_by_id_inexistente(self, repo: ProductoRepository):
-        producto = await repo.get_by_id(uuid4())
+    async def test_get_by_id_inexistente(self, repo: UserRepository):
+        found = await repo.get_by_id(uuid4())
 
-        assert producto is None
+        assert found is None
 
-    async def test_get_by_nombre_existente(
-        self,
-        repo: ProductoRepository,
-        producto_data: ProductoCreate,
-    ):
-        await repo.create(producto_data)
+    async def test_get_by_email_existente(self, repo: UserRepository, user_data: UserCreate):
+        await repo.create(
+            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+        )
 
-        producto = await repo.get_by_nombre(producto_data.nombre)
+        found = await repo.get_by_email(user_data.email)
 
-        assert producto is not None
-        assert producto.nombre == producto_data.nombre
+        assert found is not None
+        assert found.email == user_data.email
 
-    async def test_get_by_nombre_inexistente(self, repo: ProductoRepository):
-        producto = await repo.get_by_nombre("Nombre Inexistente")
+    async def test_get_by_email_inexistente(self, repo: UserRepository):
+        found = await repo.get_by_email("noexiste@test.com")
 
-        assert producto is None
+        assert found is None
 
-    async def test_get_all_vacio(self, repo: ProductoRepository):
-        productos = await repo.get_all()
+    async def test_update_user(self, repo: UserRepository, user_data: UserCreate):
+        user = await repo.create(
+            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+        )
+        user.full_name = "Nombre Actualizado"
 
-        assert productos == []
+        updated = await repo.update(user)
 
-    async def test_get_all_con_datos(
-        self,
-        repo: ProductoRepository,
-        producto_data: ProductoCreate,
-    ):
-        await repo.create(producto_data)
+        assert updated.full_name == "Nombre Actualizado"
 
-        productos = await repo.get_all()
+    async def test_deactivate_user(self, repo: UserRepository, user_data: UserCreate):
+        user = await repo.create(
+            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+        )
+        user.is_active = False
 
-        assert len(productos) == 1
-        assert productos[0].nombre == producto_data.nombre
+        updated = await repo.update(user)
 
-    async def test_get_all_con_paginacion(self, repo: ProductoRepository):
-        for i in range(5):
-            data = ProductoCreate(
-                nombre=f"Producto {i}",
-                precio=Decimal("10.00"),
-                stock=1,
-            )
-            await repo.create(data)
-
-        productos = await repo.get_all(skip=0, limit=3)
-
-        assert len(productos) == 3
-
-    async def test_get_all_con_skip(self, repo: ProductoRepository):
-        for i in range(5):
-            data = ProductoCreate(
-                nombre=f"Producto {i}",
-                precio=Decimal("10.00"),
-                stock=1,
-            )
-            await repo.create(data)
-
-        productos = await repo.get_all(skip=2, limit=10)
-
-        assert len(productos) == 3
-
-    async def test_get_bajo_stock(self, repo: ProductoRepository):
-        await repo.create(ProductoCreate(nombre="Con stock", precio=Decimal("10.00"), stock=50))
-        await repo.create(ProductoCreate(nombre="Bajo stock", precio=Decimal("10.00"), stock=3))
-
-        productos = await repo.get_bajo_stock(umbral=10)
-
-        assert len(productos) == 1
-        assert productos[0].nombre == "Bajo stock"
-
-    async def test_update_producto(
-        self,
-        repo: ProductoRepository,
-        producto_data: ProductoCreate,
-    ):
-        producto = await repo.create(producto_data)
-        producto.nombre = "Nombre Actualizado"
-
-        actualizado = await repo.update(producto)
-
-        assert actualizado.nombre == "Nombre Actualizado"
-
-    async def test_delete_existente(
-        self,
-        repo: ProductoRepository,
-        producto_data: ProductoCreate,
-    ):
-        producto_creado = await repo.create(producto_data)
-
-        resultado = await repo.delete(producto_creado.id)
-
-        assert resultado is True
-
-        producto = await repo.get_by_id(producto_creado.id)
-        assert producto is None
-
-    async def test_delete_inexistente(self, repo: ProductoRepository):
-        resultado = await repo.delete(uuid4())
-
-        assert resultado is False
+        assert updated.is_active is False

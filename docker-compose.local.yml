@@ -1,5 +1,5 @@
 services:
-    server-cronico:
+    server:
         build:
             context: .
             dockerfile: Docker/local/Dockerfile
@@ -12,19 +12,40 @@ services:
             - ./.env:/app/.env
         env_file:
             - .env
+        depends_on:
+            db:
+                condition: service_healthy
         restart: unless-stopped
-        dns:
-            - 8.8.8.8
-            - 8.8.4.4
         healthcheck:
             test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/health')"]
             interval: 30s
             timeout: 10s
             retries: 3
-            start_period: 10s
+            start_period: 15s
         networks:
-            - testing-net
+            - yummy-net
+
+    db:
+        image: postgres:16
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+        networks:
+            - yummy-net
+
+volumes:
+    postgres_data:
 
 networks:
-    testing-net:
+    yummy-net:
         driver: bridge
