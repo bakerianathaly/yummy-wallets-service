@@ -1,0 +1,30 @@
+services:
+    server-cronico:
+        build:
+            context: .
+            dockerfile: Docker/local/Dockerfile
+        ports:
+            - "8020:8020"
+        volumes:
+            - ./app:/app/app
+            - ./alembic:/app/alembic
+            - ./alembic.ini:/app/alembic.ini
+            - ./.env:/app/.env
+        env_file:
+            - .env
+        restart: unless-stopped
+        dns:
+            - 8.8.8.8
+            - 8.8.4.4
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/health')"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 10s
+        networks:
+            - testing-net
+
+networks:
+    testing-net:
+        driver: bridge
