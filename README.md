@@ -45,7 +45,7 @@ se pueden probar todos los endpoints directamente en el navegador.
 Para la primera vez, solo necesitas estos 3 pasos:
 
 1. Instalar make (si no lo tenés)
-  # macOS
+  - macOS
   brew install make
 
 2. Copiar el .env y ajustar las variables si querés cambiar algo (contraseña, secret key, etc.)
@@ -56,14 +56,14 @@ Para la primera vez, solo necesitas estos 3 pasos:
 
 Ese único comando construye las imágenes, levanta el servidor + PostgreSQL, espera que estén listos y corre las migraciones. Al final te dice que la API está en http://localhost:8020.
 
----
 Del día a día en adelante:
-
+```bash
 make up        # levantar
 make down      # bajar
 make logs      # ver qué está pasando
 make test      # correr tests
 make migrate   # si hay migraciones nuevas
+```
 ---
 
 ## Correr en local sin Docker
