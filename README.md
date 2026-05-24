@@ -24,6 +24,14 @@ cp .env.example .env
 
 # 2. Levantar todo (API + PostgreSQL)
 docker compose -f docker-compose.local.yml up --build
+
+# 3. Correr las migraciones, dentro dle contenedor
+# Hay que ejecutarlas las migraciones, en otra terminal, con los contenedores ya corriendo
+# Eso aplica todas las migraciones pendientes contra el PostgreSQL del contenedor. Solo hace falta correrlo la primera vez (o cuando haya migraciones nuevas).
+docker compose -f docker-compose.local.yml exec server alembic upgrade head
+
+# Para correr los test, en otra terminal, con los contenedores ya corriendo
+docker compose -f docker-compose.local.yml exec server pytest tests/ -v
 ```
 
 La API queda disponible en `http://localhost:8020`.
@@ -31,25 +39,31 @@ La API queda disponible en `http://localhost:8020`.
 La documentación interactiva (Swagger) está en `http://localhost:8020/docs` — desde ahí
 se pueden probar todos los endpoints directamente en el navegador.
 
-# 3. Correr las migraciones dentro del contenedor
+---
+## Levantar con ayuda del Makefile
 
-Las migraciones no corren solas — hay que ejecutarlas manualmente dentro del contenedor del servidor una vez que esté levantado:
+Para la primera vez, solo necesitas estos 3 pasos:
 
-```bash
-# En otra terminal, con los contenedores ya corriendo
-docker compose -f docker-compose.local.yml exec server alembic upgrade head
-```
+1. Instalar make (si no lo tenés)
+  # macOS
+  brew install make
 
-Eso aplica todas las migraciones pendientes contra el PostgreSQL del contenedor. Solo hace falta correrlo la primera vez (o cuando haya migraciones nuevas).
+2. Copiar el .env y ajustar las variables si querés cambiar algo (contraseña, secret key, etc.)
+  cp .env.example .env
 
-### Correr los tests dentro del contenedor
+3. Levantar todo
+  make setup
 
-Con el servidor ya corriendo (`docker compose ... up`), en otra terminal:
+Ese único comando construye las imágenes, levanta el servidor + PostgreSQL, espera que estén listos y corre las migraciones. Al final te dice que la API está en http://localhost:8020.
 
-```bash
-docker compose -f docker-compose.local.yml exec server pytest tests/ -v
-```
+---
+Del día a día en adelante:
 
+make up        # levantar
+make down      # bajar
+make logs      # ver qué está pasando
+make test      # correr tests
+make migrate   # si hay migraciones nuevas
 ---
 
 ## Correr en local sin Docker
