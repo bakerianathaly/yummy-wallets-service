@@ -6,7 +6,7 @@ from app.exceptions import (
     ValidationException,
 )
 from app.models.user import UserCreate, UserUpdate
-from app.services.user import UserService
+from app.services.user.user_service import UserService
 
 
 class TestUpdateUser:

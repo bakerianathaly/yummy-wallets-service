@@ -2,7 +2,7 @@ import pytest
 
 from app.exceptions import UserAlreadyExistsException, ValidationException
 from app.models.user import UserCreate
-from app.services.user import UserService
+from app.services.user.user_service import UserService
 
 
 class TestCreateUser:

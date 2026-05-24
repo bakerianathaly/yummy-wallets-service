@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.exceptions import DatabaseException
 from app.models.wallet import Wallet
 
 
@@ -14,10 +15,14 @@ class WalletRepository:
         self.db = db
 
     async def create(self, wallet: Wallet) -> Wallet:
-        self.db.add(wallet)
-        await self.db.commit()
-        await self.db.refresh(wallet)
-        return wallet
+        try:
+            self.db.add(wallet)
+            await self.db.commit()
+            await self.db.refresh(wallet)
+            return wallet
+        except Exception as e:
+            await self.db.rollback()
+            raise DatabaseException("Error al crear la wallet") from e
 
     async def get_by_id(self, wallet_id: UUID) -> Optional[Wallet]:
         return await self.db.get(Wallet, wallet_id)
@@ -29,9 +34,13 @@ class WalletRepository:
         return result.scalar_one_or_none()
 
     async def update_balance(self, wallet: Wallet, new_balance: Decimal) -> Wallet:
-        wallet.balance = new_balance
-        wallet.updated_at = datetime.now()
-        self.db.add(wallet)
-        await self.db.flush()
-        await self.db.refresh(wallet)
-        return wallet
+        try:
+            wallet.balance = new_balance
+            wallet.updated_at = datetime.now()
+            self.db.add(wallet)
+            await self.db.flush()
+            await self.db.refresh(wallet)
+            return wallet
+        except Exception as e:
+            await self.db.rollback()
+            raise DatabaseException("Error al actualizar el balance de la wallet") from e

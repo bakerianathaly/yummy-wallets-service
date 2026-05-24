@@ -10,8 +10,8 @@ from app.models.wallet import Wallet
 from app.repositories.transaction_repository import TransactionRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.wallet_repository import WalletRepository
-from app.services.user import UserService
-from app.services.wallet import WalletService
+from app.services.user.user_service import UserService
+from app.services.wallet.wallet_service import WalletService
 
 
 @pytest.fixture(name="db_session")

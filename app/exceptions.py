@@ -36,3 +36,7 @@ class InvalidAmountException(Exception):
 
 class UnauthorizedWalletAccessException(Exception):
     pass
+
+
+class DatabaseException(Exception):
+    pass

@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.exceptions import DatabaseException
 from app.models.wallet import Transaction
 
 
@@ -12,10 +13,14 @@ class TransactionRepository:
         self.db = db
 
     async def create(self, transaction: Transaction) -> Transaction:
-        self.db.add(transaction)
-        await self.db.commit()
-        await self.db.refresh(transaction)
-        return transaction
+        try:
+            self.db.add(transaction)
+            await self.db.commit()
+            await self.db.refresh(transaction)
+            return transaction
+        except Exception as e:
+            await self.db.rollback()
+            raise DatabaseException("Error al crear la transacción") from e
 
     async def get_by_idempotency_key(self, key: str) -> Optional[Transaction]:
         result = await self.db.execute(

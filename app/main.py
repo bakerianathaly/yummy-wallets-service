@@ -5,7 +5,7 @@ from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.users import router as users_router
 from app.api.wallets import router as wallets_router
-from app.exceptions import InvalidTokenException, InactiveUserException
+from app.exceptions import DatabaseException, InactiveUserException, InvalidTokenException
 from shared.config import API_PREFIX, DESCRIPTION, PROJECT_NAME, VERSION
 
 app = FastAPI(title=PROJECT_NAME, description=DESCRIPTION, version=VERSION)
@@ -19,6 +19,11 @@ async def invalid_token_handler(request: Request, exc: InvalidTokenException):
 @app.exception_handler(InactiveUserException)
 async def inactive_user_handler(request: Request, exc: InactiveUserException):
     return JSONResponse(status_code=403, content={"detail": str(exc)})
+
+
+@app.exception_handler(DatabaseException)
+async def database_exception_handler(request: Request, exc: DatabaseException):
+    return JSONResponse(status_code=500, content={"detail": "Error interno de base de datos"})
 
 
 app.include_router(health_router)

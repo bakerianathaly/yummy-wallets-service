@@ -1,5 +1,5 @@
 from app.models.user import LoginRequest, UserCreate
-from app.services.user import UserService
+from app.services.user.user_service import UserService
 from app.exceptions import InactiveUserException
 import pytest
 
