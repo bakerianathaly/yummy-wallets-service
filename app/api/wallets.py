@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.deps import WalletDeps, get_current_user
 from app.exceptions import (
@@ -15,7 +15,15 @@ from app.exceptions import (
 )
 from app.models.api_response import APIResponse
 from app.models.user import User
-from app.models.wallet import DepositRequest, TransactionResponse, TransferRequest, WalletResponse, WithdrawalRequest
+from app.models.wallet import (
+    DepositRequest,
+    PaginatedTransactionsResponse,
+    TransactionResponse,
+    TransferRequest,
+    WalletResponse,
+    WalletSummaryResponse,
+    WithdrawalRequest,
+)
 from app.services.wallet import WalletService
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
@@ -83,6 +91,40 @@ async def withdraw(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except UnauthorizedWalletAccessException as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.get(
+    "/me",
+    response_model=APIResponse[WalletSummaryResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_wallet_summary(
+    current_user: User = Depends(get_current_user),
+    service: WalletService = Depends(WalletDeps.get_service),
+) -> APIResponse[WalletSummaryResponse]:
+    try:
+        summary = await service.get_summary.execute(current_user)
+        return APIResponse(success=True, message="Wallet obtenida", outcome=[summary])
+    except WalletNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/me/transactions",
+    response_model=APIResponse[PaginatedTransactionsResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_wallet_transactions(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    service: WalletService = Depends(WalletDeps.get_service),
+) -> APIResponse[PaginatedTransactionsResponse]:
+    try:
+        result = await service.get_transactions.execute(current_user, page, page_size)
+        return APIResponse(success=True, message="Transacciones obtenidas", outcome=[result])
+    except WalletNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.post(

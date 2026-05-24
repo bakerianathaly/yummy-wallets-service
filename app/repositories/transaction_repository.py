@@ -1,7 +1,8 @@
+import math
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import DatabaseException
@@ -65,3 +66,33 @@ class TransactionRepository:
             .order_by(Transaction.created_at.desc())
         )
         return list(result.scalars().all())
+
+    async def get_recent_by_wallet_id(self, wallet_id: UUID, limit: int = 10) -> list[Transaction]:
+        result = await self.db.execute(
+            select(Transaction)
+            .where(Transaction.wallet_id == wallet_id)
+            .order_by(Transaction.created_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def get_paginated_by_wallet_id(
+        self, wallet_id: UUID, page: int, page_size: int
+    ) -> tuple[list[Transaction], int]:
+        offset = (page - 1) * page_size
+
+        count_result = await self.db.execute(
+            select(func.count()).where(Transaction.wallet_id == wallet_id)
+        )
+        total = count_result.scalar_one()
+
+        result = await self.db.execute(
+            select(Transaction)
+            .where(Transaction.wallet_id == wallet_id)
+            .order_by(Transaction.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        transactions = list(result.scalars().all())
+
+        return transactions, total

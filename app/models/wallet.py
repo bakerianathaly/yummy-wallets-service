@@ -75,3 +75,19 @@ class TransferRequest(SQLModel):
     amount: Decimal
     idempotency_key: str
     description: Optional[str] = None
+
+
+class WalletSummaryResponse(SQLModel):
+    id: uuid.UUID
+    balance: Decimal
+    is_active: bool
+    created_at: datetime
+    recent_transactions: list[TransactionResponse]
+
+
+class PaginatedTransactionsResponse(SQLModel):
+    transactions: list[TransactionResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
