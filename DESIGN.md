@@ -116,6 +116,57 @@ le bajaron $50 pero a la otra no le subieron. Si en este paso falla cualquier co
 
 ---
 
+## Explicación de los tests
+
+Los tests están organizados en dos niveles:
+
+**Tests de repositorio (tests/repositories/)**
+Prueban que las queries SQL hacen lo que se espera que hagan, por ejemplo: que get_by_id devuelve el objeto correcto, que create persiste en DB, que get_by_idempotency_key encuentra por esa columna específica. 
+
+Son pero importantes ya que si el SQL no hace el funcionamiento que deberia los test de servicio no te dicen dónde falla.
+
+**Tests de servicio (tests/services/)**
+
+Aquí es donde vive la lógica de negocio, cada archivo de test tiene los siguientes caminos:
+
+- Happy path
+- Validaciones: montos negativos, montos mínimos, wallet que no existe, usuario que no es dueño, etc
+- Idempotencia: si mandas la misma key dos veces, el dinero no se mueve dos veces
+- Concurrencia simulada: es el test más importante de cada operación de escritura. 
+
+**La transferencia tiene tests adicionales porque es la operación más compleja:**
+
+- Que tx_out y tx_in tienen reference_id cruzados, son la misma transferencia vista desde los dos lados
+- Que la suma total de dinero del sistema se conserva antes y después, si había $160 en total después sigue habiendo $160
+- Simulación del escenario de deadlock: A->B y B->A al mismo tiempo, verificando que el dinero no se corrompe
+
+**Lo que los tests no cubren y por qué:**
+
+El lock real de SELECT FOR UPDATE no es testeable con SQLite. Esto está documentado explícitamente en los tests con comentarios que explican qué haría PostgreSQL en ese punto. La garantía de concurrencia real existe en el código de producción, los tests documentan la intención.
+
+
+---
+## Patrones utilizados y se usaron en las pruebas
+
+**Repository pattern y testing:**
+
+Los repositorios encapsulan todo lo que tiene que ver con SQL, eso significa que los tests de servicio nunca saben que existe una base de datos, solo saben que hay un objeto con métodos como get_by_id o update_balance. 
+
+Los tests del proyecto entonces inyectan una sesión SQLite real (no un mock), lo cual permite tener pruebas reales de SQL sin levantar PostgreSQL. Si mañana quisieras cambiar a MongoDB o a una API externa, solo cambias los repositorios, los servicios y sus tests no se tocarian.
+
+**Command pattern (objetos de servicio) y testing:**
+
+Cada operación es su propia clase: DepositWallet, WithdrawWallet, TransferWallet. Esto tiene una consecuencia directa en testing: para testear un depósito, instanciás DepositWallet(wallet_repo, transaction_repo) y llamás .execute(). 
+
+Con esto no se necesita el WalletService, el router ni el JWT. El test setup es mínimo y el test prueba exactamente una cosa. 
+
+**Dependency injection y testing:**
+FastAPI cachea la sesión de DB dentro de un request via Depends(get_db), los tests simplemente no usan ese mecanismo, crean su propia sesión SQLite y se la pasan directamente a los repos. 
+
+Sin esta separación, los tests tendrían que mockear el sistema de DI de FastAPI, que es una complicacion innecesaria. Con esta separación, el conftest.py es straightforward: crea sesión, crea repos con esa sesión, crea servicios con esos repos.
+
+---
+
 ## Decisiones de diseño
 
 ### 1. REST en lugar de gRPC o eventos asíncronos
