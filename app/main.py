@@ -5,7 +5,7 @@ from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.users import router as users_router
 from app.api.wallets import router as wallets_router
-from app.exceptions import DatabaseException, InactiveUserException, InvalidTokenException
+from app.exceptions import DatabaseException, InactiveUserException, InsufficientFundsException, InvalidTokenException
 from shared.config import API_PREFIX, DESCRIPTION, PROJECT_NAME, VERSION
 
 app = FastAPI(title=PROJECT_NAME, description=DESCRIPTION, version=VERSION)
@@ -19,6 +19,11 @@ async def invalid_token_handler(request: Request, exc: InvalidTokenException):
 @app.exception_handler(InactiveUserException)
 async def inactive_user_handler(request: Request, exc: InactiveUserException):
     return JSONResponse(status_code=403, content={"detail": str(exc)})
+
+
+@app.exception_handler(InsufficientFundsException)
+async def insufficient_funds_handler(request: Request, exc: InsufficientFundsException):
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
 
 
 @app.exception_handler(DatabaseException)

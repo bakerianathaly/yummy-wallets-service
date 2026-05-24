@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.deps import WalletDeps, get_current_user
 from app.exceptions import (
     InactiveUserException,
+    InsufficientFundsException,
     InvalidAmountException,
     UnauthorizedWalletAccessException,
     WalletAlreadyExistsException,
@@ -12,7 +13,7 @@ from app.exceptions import (
 )
 from app.models.api_response import APIResponse
 from app.models.user import User
-from app.models.wallet import DepositRequest, TransactionResponse, WalletResponse
+from app.models.wallet import DepositRequest, TransactionResponse, WalletResponse, WithdrawalRequest
 from app.services.wallet import WalletService
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
@@ -51,6 +52,30 @@ async def deposit(
         transaction = await service.deposit.execute(wallet_id, current_user, body)
         return APIResponse(success=True, message="Depósito realizado", outcome=[transaction])
     except InvalidAmountException as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except WalletNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except UnauthorizedWalletAccessException as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.post(
+    "/{wallet_id}/withdraw",
+    response_model=APIResponse[TransactionResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def withdraw(
+    wallet_id: uuid.UUID,
+    body: WithdrawalRequest,
+    current_user: User = Depends(get_current_user),
+    service: WalletService = Depends(WalletDeps.get_service),
+) -> APIResponse[TransactionResponse]:
+    try:
+        transaction = await service.withdraw.execute(wallet_id, current_user, body)
+        return APIResponse(success=True, message="Retiro realizado", outcome=[transaction])
+    except InvalidAmountException as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except InsufficientFundsException as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except WalletNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

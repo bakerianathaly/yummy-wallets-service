@@ -38,5 +38,9 @@ class UnauthorizedWalletAccessException(Exception):
     pass
 
 
+class InsufficientFundsException(Exception):
+    pass
+
+
 class DatabaseException(Exception):
     pass
