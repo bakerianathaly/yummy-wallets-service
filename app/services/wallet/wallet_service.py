@@ -2,6 +2,7 @@ from app.repositories.transaction_repository import TransactionRepository
 from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet.create_wallet import CreateWallet
 from app.services.wallet.deposit_wallet import DepositWallet
+from app.services.wallet.transfer_wallet import TransferWallet
 from app.services.wallet.withdraw_wallet import WithdrawWallet
 
 
@@ -10,3 +11,4 @@ class WalletService:
         self.create = CreateWallet(wallet_repo)
         self.deposit = DepositWallet(wallet_repo, transaction_repo)
         self.withdraw = WithdrawWallet(wallet_repo, transaction_repo)
+        self.transfer = TransferWallet(wallet_repo, transaction_repo)

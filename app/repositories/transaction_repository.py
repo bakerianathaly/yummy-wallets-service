@@ -28,6 +28,36 @@ class TransactionRepository:
         )
         return result.scalar_one_or_none()
 
+    async def save_transfer_pair(
+        self, tx_out: Transaction, tx_in: Transaction
+    ) -> tuple[Transaction, Transaction]:
+        try:
+            # Agregamos los dos lados al mismo tiempo sin commitear todavía.
+            # Necesitamos que la DB les asigne IDs antes de poder cruzar las referencias.
+            self.db.add(tx_out)
+            self.db.add(tx_in)
+            await self.db.flush()
+            await self.db.refresh(tx_out)
+            await self.db.refresh(tx_in)
+
+            # Ahora que tenemos los IDs, cada transacción apunta a su contraparte.
+            # Esto es lo que permite reconstruir el par completo desde cualquier lado.
+            tx_out.reference_id = tx_in.id
+            tx_in.reference_id = tx_out.id
+            self.db.add(tx_out)
+            self.db.add(tx_in)
+            await self.db.flush()
+
+            # Un solo commit cierra todo: ambas actualizaciones de balance (que
+            # ya venían como flush desde el servicio) + ambas transacciones + sus referencias.
+            await self.db.commit()
+            await self.db.refresh(tx_out)
+            await self.db.refresh(tx_in)
+            return tx_out, tx_in
+        except Exception as e:
+            await self.db.rollback()
+            raise DatabaseException("Error al crear las transacciones de transferencia") from e
+
     async def get_by_wallet_id(self, wallet_id: UUID) -> list[Transaction]:
         result = await self.db.execute(
             select(Transaction)

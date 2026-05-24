@@ -42,5 +42,13 @@ class InsufficientFundsException(Exception):
     pass
 
 
+class SameWalletTransferException(Exception):
+    pass
+
+
+class InactiveWalletException(Exception):
+    pass
+
+
 class DatabaseException(Exception):
     pass

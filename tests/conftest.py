@@ -127,3 +127,12 @@ async def created_wallet_fixture(db_session: AsyncSession, created_user: User) -
     await db_session.commit()
     await db_session.refresh(wallet)
     return wallet
+
+
+@pytest.fixture(name="another_wallet")
+async def another_wallet_fixture(db_session: AsyncSession, another_user: User) -> Wallet:
+    wallet = Wallet(user_id=another_user.id)
+    db_session.add(wallet)
+    await db_session.commit()
+    await db_session.refresh(wallet)
+    return wallet

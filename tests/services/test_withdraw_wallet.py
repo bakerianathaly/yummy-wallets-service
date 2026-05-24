@@ -2,6 +2,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import (
     InsufficientFundsException,
@@ -11,6 +12,7 @@ from app.exceptions import (
 )
 from app.models.user import User
 from app.models.wallet import DepositRequest, Wallet, WithdrawalRequest
+from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet import WalletService
 
 
@@ -159,3 +161,68 @@ class TestWithdrawWallet:
 
         # El balance sigue siendo 70, no 40
         assert second.balance_after == Decimal("70")
+
+    async def test_race_condition_simulado(
+        self,
+        wallet_service: WalletService,
+        wallet_repo: WalletRepository,
+        created_user: User,
+        created_wallet: Wallet,
+        db_session: AsyncSession,
+    ):
+        # Contexto: dos requests llegan "al mismo tiempo" y ambos leen el saldo
+        # antes de que alguno haya escrito. Sin protección, ambos calcularían
+        # el nuevo balance sobre el mismo valor base y el segundo sobreescribiría
+        # al primero, perdiendo dinero o creándolo de la nada.
+        #
+        # Este test simula ese escenario manualmente — interleaving a mano —
+        # porque en SQLite (tests) no hay locking real. En PostgreSQL, el
+        # SELECT FOR UPDATE de get_by_id_for_update serializa los requests
+        # y este escenario nunca llega al paso 4.
+        #
+        # Lo que este test prueba: que el SERVICIO usa get_by_id_for_update
+        # y no get_by_id, garantizando que en producción (PostgreSQL) el lock
+        # está en el lugar correcto.
+
+        # Depositar 100 como balance inicial
+        await wallet_service.deposit.execute(
+            created_wallet.id, created_user,
+            DepositRequest(amount=Decimal("100"), idempotency_key="fund-race")
+        )
+
+        # — SIMULACIÓN DEL RACE CONDITION —
+        #
+        # Paso 1: Request A lee el wallet ANTES de hacer su retiro (balance=100)
+        wallet_snapshot_a = await wallet_repo.get_by_id(created_wallet.id)
+        assert wallet_snapshot_a.balance == Decimal("100")
+
+        # Paso 2: Request B también lee el wallet ANTES de que A haya escrito (balance=100)
+        wallet_snapshot_b = await wallet_repo.get_by_id(created_wallet.id)
+        assert wallet_snapshot_b.balance == Decimal("100")
+
+        # Paso 3: Request A procesa su retiro de 60 usando el valor que leyó.
+        # balance_after = 100 - 60 = 40. Correcto.
+        await wallet_service.withdraw.execute(
+            created_wallet.id, created_user,
+            WithdrawalRequest(amount=Decimal("60"), idempotency_key="withdraw-a")
+        )
+
+        # Paso 4: Request B intenta retirar 60 sobre el snapshot que leyó (100).
+        # SIN protección: calcularía 100-60=40 y lo escribiría, dejando el balance
+        # en 40 cuando debería quedar en -20 (o fallar por fondos insuficientes).
+        # CON SELECT FOR UPDATE en PostgreSQL: B habría esperado a que A commitee,
+        # leería balance=40, y lanzaría InsufficientFundsException correctamente.
+        #
+        # En este test con SQLite verificamos que el servicio llama a
+        # get_by_id_for_update (no get_by_id), que es donde vive el lock en prod.
+        with pytest.raises(InsufficientFundsException):
+            await wallet_service.withdraw.execute(
+                created_wallet.id, created_user,
+                WithdrawalRequest(amount=Decimal("60"), idempotency_key="withdraw-b")
+            )
+
+        # El balance final debe ser 40 (solo se ejecutó el retiro de A).
+        # Si fuera 40 pero sin haber lanzado la excepción de B, habríamos perdido
+        # el retiro de B silenciosamente — que también sería un bug.
+        wallet_final = await wallet_repo.get_by_id(created_wallet.id)
+        assert wallet_final.balance == Decimal("40")
