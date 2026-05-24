@@ -35,7 +35,7 @@ class DepositWallet:
         if existing:
             return existing
 
-        wallet = await self.wallet_repo.get_by_id(wallet_id)
+        wallet = await self.wallet_repo.get_by_id_for_update(wallet_id)
         if wallet is None:
             raise WalletNotFoundException("Wallet no encontrada")
 
