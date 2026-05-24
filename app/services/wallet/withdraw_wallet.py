@@ -16,17 +16,25 @@ MIN_WITHDRAWAL = Decimal("0.5")
 
 
 class WithdrawWallet:
-    def __init__(self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository):
+    def __init__(
+        self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository
+    ):
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
 
-    async def execute(self, wallet_id: UUID, user: User, request: WithdrawalRequest) -> Transaction:
+    async def execute(
+        self, wallet_id: UUID, user: User, request: WithdrawalRequest
+    ) -> Transaction:
         if request.amount <= Decimal("0"):
             raise InvalidAmountException("El monto debe ser positivo")
         if request.amount < MIN_WITHDRAWAL:
-            raise InvalidAmountException(f"El monto mínimo de retiro es {MIN_WITHDRAWAL}")
+            raise InvalidAmountException(
+                f"El monto mínimo de retiro es {MIN_WITHDRAWAL}"
+            )
 
-        existing = await self.transaction_repo.get_by_idempotency_key(request.idempotency_key)
+        existing = await self.transaction_repo.get_by_idempotency_key(
+            request.idempotency_key
+        )
         if existing:
             return existing
 

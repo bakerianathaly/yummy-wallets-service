@@ -1,6 +1,5 @@
 from uuid import uuid4
 
-import pytest
 
 from app.models.user import UserCreate
 from app.repositories.user_repository import UserRepository
@@ -25,9 +24,15 @@ class TestUserRepository:
         assert created.full_name == user_data.full_name
         assert created.is_active is True
 
-    async def test_get_by_id_existente(self, repo: UserRepository, user_data: UserCreate):
+    async def test_get_by_id_existente(
+        self, repo: UserRepository, user_data: UserCreate
+    ):
         user = await repo.create(
-            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+            User(
+                email=user_data.email,
+                full_name=user_data.full_name,
+                hashed_password="h",
+            )
         )
 
         found = await repo.get_by_id(user.id)
@@ -40,9 +45,15 @@ class TestUserRepository:
 
         assert found is None
 
-    async def test_get_by_email_existente(self, repo: UserRepository, user_data: UserCreate):
+    async def test_get_by_email_existente(
+        self, repo: UserRepository, user_data: UserCreate
+    ):
         await repo.create(
-            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+            User(
+                email=user_data.email,
+                full_name=user_data.full_name,
+                hashed_password="h",
+            )
         )
 
         found = await repo.get_by_email(user_data.email)
@@ -57,7 +68,11 @@ class TestUserRepository:
 
     async def test_update_user(self, repo: UserRepository, user_data: UserCreate):
         user = await repo.create(
-            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+            User(
+                email=user_data.email,
+                full_name=user_data.full_name,
+                hashed_password="h",
+            )
         )
         user.full_name = "Nombre Actualizado"
 
@@ -67,7 +82,11 @@ class TestUserRepository:
 
     async def test_deactivate_user(self, repo: UserRepository, user_data: UserCreate):
         user = await repo.create(
-            User(email=user_data.email, full_name=user_data.full_name, hashed_password="h")
+            User(
+                email=user_data.email,
+                full_name=user_data.full_name,
+                hashed_password="h",
+            )
         )
         user.is_active = False
 

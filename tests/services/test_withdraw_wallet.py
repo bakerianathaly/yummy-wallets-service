@@ -27,7 +27,9 @@ def _withdraw(amount: str, key: str = "withdraw-key-1") -> WithdrawalRequest:
 async def _funded_wallet(
     wallet_service: WalletService, wallet: Wallet, user: User, amount: str = "100"
 ) -> None:
-    await wallet_service.deposit.execute(wallet.id, user, _deposit(amount, f"fund-{amount}"))
+    await wallet_service.deposit.execute(
+        wallet.id, user, _deposit(amount, f"fund-{amount}")
+    )
 
 
 class TestWithdrawWallet:
@@ -50,8 +52,12 @@ class TestWithdrawWallet:
     ):
         await _funded_wallet(wallet_service, created_wallet, created_user, "100")
 
-        await wallet_service.withdraw.execute(created_wallet.id, created_user, _withdraw("20", "k1"))
-        t2 = await wallet_service.withdraw.execute(created_wallet.id, created_user, _withdraw("15", "k2"))
+        await wallet_service.withdraw.execute(
+            created_wallet.id, created_user, _withdraw("20", "k1")
+        )
+        t2 = await wallet_service.withdraw.execute(
+            created_wallet.id, created_user, _withdraw("15", "k2")
+        )
 
         assert t2.balance_after == Decimal("65")
 
@@ -186,8 +192,9 @@ class TestWithdrawWallet:
 
         # Depositar 100 como balance inicial
         await wallet_service.deposit.execute(
-            created_wallet.id, created_user,
-            DepositRequest(amount=Decimal("100"), idempotency_key="fund-race")
+            created_wallet.id,
+            created_user,
+            DepositRequest(amount=Decimal("100"), idempotency_key="fund-race"),
         )
 
         # — SIMULACIÓN DEL RACE CONDITION —
@@ -203,8 +210,9 @@ class TestWithdrawWallet:
         # Paso 3: Request A procesa su retiro de 60 usando el valor que leyó.
         # balance_after = 100 - 60 = 40. Correcto.
         await wallet_service.withdraw.execute(
-            created_wallet.id, created_user,
-            WithdrawalRequest(amount=Decimal("60"), idempotency_key="withdraw-a")
+            created_wallet.id,
+            created_user,
+            WithdrawalRequest(amount=Decimal("60"), idempotency_key="withdraw-a"),
         )
 
         # Paso 4: Request B intenta retirar 60 sobre el snapshot que leyó (100).
@@ -217,8 +225,9 @@ class TestWithdrawWallet:
         # get_by_id_for_update (no get_by_id), que es donde vive el lock en prod.
         with pytest.raises(InsufficientFundsException):
             await wallet_service.withdraw.execute(
-                created_wallet.id, created_user,
-                WithdrawalRequest(amount=Decimal("60"), idempotency_key="withdraw-b")
+                created_wallet.id,
+                created_user,
+                WithdrawalRequest(amount=Decimal("60"), idempotency_key="withdraw-b"),
             )
 
         # El balance final debe ser 40 (solo se ejecutó el retiro de A).

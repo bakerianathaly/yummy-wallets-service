@@ -51,7 +51,9 @@ async def test_usuario_sin_wallet_lanza_excepcion(
 
 
 async def test_sin_transacciones_devuelve_paginacion_vacia(
-    transactions_service: GetWalletTransactions, created_user: User, created_wallet: Wallet
+    transactions_service: GetWalletTransactions,
+    created_user: User,
+    created_wallet: Wallet,
 ):
     result = await transactions_service.execute(created_user, page=1, page_size=20)
 

@@ -3,7 +3,11 @@ from uuid import uuid4
 
 import pytest
 
-from app.exceptions import InvalidAmountException, UnauthorizedWalletAccessException, WalletNotFoundException
+from app.exceptions import (
+    InvalidAmountException,
+    UnauthorizedWalletAccessException,
+    WalletNotFoundException,
+)
 from app.models.user import User
 from app.models.wallet import DepositRequest, Wallet
 from app.services.wallet import WalletService
@@ -29,8 +33,12 @@ class TestDepositWallet:
     async def test_balance_acumulado(
         self, wallet_service: WalletService, created_user: User, created_wallet: Wallet
     ):
-        await wallet_service.deposit.execute(created_wallet.id, created_user, _request("50", "k1"))
-        t2 = await wallet_service.deposit.execute(created_wallet.id, created_user, _request("30", "k2"))
+        await wallet_service.deposit.execute(
+            created_wallet.id, created_user, _request("50", "k1")
+        )
+        t2 = await wallet_service.deposit.execute(
+            created_wallet.id, created_user, _request("30", "k2")
+        )
 
         assert t2.balance_after == Decimal("80")
 
@@ -71,9 +79,7 @@ class TestDepositWallet:
         self, wallet_service: WalletService, created_user: User
     ):
         with pytest.raises(WalletNotFoundException):
-            await wallet_service.deposit.execute(
-                uuid4(), created_user, _request("100")
-            )
+            await wallet_service.deposit.execute(uuid4(), created_user, _request("100"))
 
     async def test_wallet_de_otro_usuario(
         self, wallet_service: WalletService, another_user: User, created_wallet: Wallet

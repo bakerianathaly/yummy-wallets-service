@@ -6,7 +6,9 @@ from app.repositories.wallet_repository import WalletRepository
 
 
 class TestWalletRepository:
-    async def test_create_wallet(self, wallet_repo: WalletRepository, created_user: User):
+    async def test_create_wallet(
+        self, wallet_repo: WalletRepository, created_user: User
+    ):
         wallet = Wallet(user_id=created_user.id)
         created = await wallet_repo.create(wallet)
 

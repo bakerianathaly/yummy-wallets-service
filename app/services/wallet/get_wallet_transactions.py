@@ -11,11 +11,15 @@ DEFAULT_PAGE_SIZE = 20
 
 
 class GetWalletTransactions:
-    def __init__(self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository):
+    def __init__(
+        self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository
+    ):
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
 
-    async def execute(self, user: User, page: int, page_size: int) -> PaginatedTransactionsResponse:
+    async def execute(
+        self, user: User, page: int, page_size: int
+    ) -> PaginatedTransactionsResponse:
         page = max(1, page)
         page_size = max(1, min(page_size, MAX_PAGE_SIZE))
 
@@ -29,7 +33,9 @@ class GetWalletTransactions:
         total_pages = math.ceil(total / page_size) if total > 0 else 1
 
         return PaginatedTransactionsResponse(
-            transactions=[TransactionResponse.model_validate(tx) for tx in transactions],
+            transactions=[
+                TransactionResponse.model_validate(tx) for tx in transactions
+            ],
             total=total,
             page=page,
             page_size=page_size,

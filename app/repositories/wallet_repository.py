@@ -36,15 +36,11 @@ class WalletRepository:
                 select(Wallet).where(Wallet.id == wallet_id).with_for_update()
             )
         except CompileError:
-            result = await self.db.execute(
-                select(Wallet).where(Wallet.id == wallet_id)
-            )
+            result = await self.db.execute(select(Wallet).where(Wallet.id == wallet_id))
         return result.scalar_one_or_none()
 
     async def get_by_user_id(self, user_id: UUID) -> Optional[Wallet]:
-        result = await self.db.execute(
-            select(Wallet).where(Wallet.user_id == user_id)
-        )
+        result = await self.db.execute(select(Wallet).where(Wallet.user_id == user_id))
         return result.scalar_one_or_none()
 
     async def update_balance(self, wallet: Wallet, new_balance: Decimal) -> Wallet:
@@ -57,4 +53,6 @@ class WalletRepository:
             return wallet
         except Exception as e:
             await self.db.rollback()
-            raise DatabaseException("Error al actualizar el balance de la wallet") from e
+            raise DatabaseException(
+                "Error al actualizar el balance de la wallet"
+            ) from e

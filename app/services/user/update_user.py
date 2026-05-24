@@ -1,5 +1,4 @@
 from datetime import datetime
-from uuid import UUID
 
 from app.auth.security import hash_password
 from app.exceptions import (

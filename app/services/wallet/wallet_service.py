@@ -9,7 +9,9 @@ from app.services.wallet.withdraw_wallet import WithdrawWallet
 
 
 class WalletService:
-    def __init__(self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository):
+    def __init__(
+        self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository
+    ):
         self.create = CreateWallet(wallet_repo)
         self.deposit = DepositWallet(wallet_repo, transaction_repo)
         self.withdraw = WithdrawWallet(wallet_repo, transaction_repo)

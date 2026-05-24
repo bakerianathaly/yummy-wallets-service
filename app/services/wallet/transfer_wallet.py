@@ -18,19 +18,27 @@ MIN_TRANSFER = Decimal("0.5")
 
 
 class TransferWallet:
-    def __init__(self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository):
+    def __init__(
+        self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository
+    ):
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
 
-    async def execute(self, from_wallet_id: UUID, user: User, request: TransferRequest) -> Transaction:
+    async def execute(
+        self, from_wallet_id: UUID, user: User, request: TransferRequest
+    ) -> Transaction:
         if request.amount <= Decimal("0"):
             raise InvalidAmountException("El monto debe ser positivo")
         if request.amount < MIN_TRANSFER:
-            raise InvalidAmountException(f"El monto mínimo de transferencia es {MIN_TRANSFER}")
+            raise InvalidAmountException(
+                f"El monto mínimo de transferencia es {MIN_TRANSFER}"
+            )
         if from_wallet_id == request.to_wallet_id:
             raise SameWalletTransferException("No puedes transferir a tu propia wallet")
 
-        existing = await self.transaction_repo.get_by_idempotency_key(request.idempotency_key)
+        existing = await self.transaction_repo.get_by_idempotency_key(
+            request.idempotency_key
+        )
         if existing:
             return existing
 
@@ -53,7 +61,9 @@ class TransferWallet:
         if from_wallet is None:
             raise WalletNotFoundException("Wallet de origen no encontrada")
         if from_wallet.user_id != user.id:
-            raise UnauthorizedWalletAccessException("No tienes acceso a la wallet de origen")
+            raise UnauthorizedWalletAccessException(
+                "No tienes acceso a la wallet de origen"
+            )
         if to_wallet is None:
             raise WalletNotFoundException("Wallet de destino no encontrada")
         if not to_wallet.is_active:

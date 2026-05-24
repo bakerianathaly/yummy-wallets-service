@@ -1,4 +1,3 @@
-import math
 from typing import Optional
 from uuid import UUID
 
@@ -57,7 +56,9 @@ class TransactionRepository:
             return tx_out, tx_in
         except Exception as e:
             await self.db.rollback()
-            raise DatabaseException("Error al crear las transacciones de transferencia") from e
+            raise DatabaseException(
+                "Error al crear las transacciones de transferencia"
+            ) from e
 
     async def get_by_wallet_id(self, wallet_id: UUID) -> list[Transaction]:
         result = await self.db.execute(
@@ -67,7 +68,9 @@ class TransactionRepository:
         )
         return list(result.scalars().all())
 
-    async def get_recent_by_wallet_id(self, wallet_id: UUID, limit: int = 10) -> list[Transaction]:
+    async def get_recent_by_wallet_id(
+        self, wallet_id: UUID, limit: int = 10
+    ) -> list[Transaction]:
         result = await self.db.execute(
             select(Transaction)
             .where(Transaction.wallet_id == wallet_id)

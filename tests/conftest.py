@@ -121,7 +121,9 @@ async def another_user_fixture(db_session: AsyncSession) -> User:
 
 
 @pytest.fixture(name="created_wallet")
-async def created_wallet_fixture(db_session: AsyncSession, created_user: User) -> Wallet:
+async def created_wallet_fixture(
+    db_session: AsyncSession, created_user: User
+) -> Wallet:
     wallet = Wallet(user_id=created_user.id)
     db_session.add(wallet)
     await db_session.commit()
@@ -130,7 +132,9 @@ async def created_wallet_fixture(db_session: AsyncSession, created_user: User) -
 
 
 @pytest.fixture(name="another_wallet")
-async def another_wallet_fixture(db_session: AsyncSession, another_user: User) -> Wallet:
+async def another_wallet_fixture(
+    db_session: AsyncSession, another_user: User
+) -> Wallet:
     wallet = Wallet(user_id=another_user.id)
     db_session.add(wallet)
     await db_session.commit()

@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from app.models.wallet import Transaction, Wallet
 from app.repositories.transaction_repository import TransactionRepository
-from app.repositories.wallet_repository import WalletRepository
 
 
 def _make_transaction(wallet_id, idempotency_key="key-1") -> Transaction:
@@ -32,7 +31,9 @@ class TestTransactionRepository:
     async def test_get_by_idempotency_key_existente(
         self, transaction_repo: TransactionRepository, created_wallet: Wallet
     ):
-        await transaction_repo.create(_make_transaction(created_wallet.id, "unique-key"))
+        await transaction_repo.create(
+            _make_transaction(created_wallet.id, "unique-key")
+        )
 
         found = await transaction_repo.get_by_idempotency_key("unique-key")
 

@@ -17,7 +17,9 @@ class TestUpdateUser:
     ):
         user = await service.create.execute(user_data)
 
-        updated = await service.update.execute(user, UserUpdate(full_name="Nuevo Nombre"))
+        updated = await service.update.execute(
+            user, UserUpdate(full_name="Nuevo Nombre")
+        )
 
         assert updated.full_name == "Nuevo Nombre"
         assert updated.email == user.email

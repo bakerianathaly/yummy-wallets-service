@@ -60,9 +60,13 @@ async def deposit(
 ) -> APIResponse[TransactionResponse]:
     try:
         transaction = await service.deposit.execute(wallet_id, current_user, body)
-        return APIResponse(success=True, message="Depósito realizado", outcome=[transaction])
+        return APIResponse(
+            success=True, message="Depósito realizado", outcome=[transaction]
+        )
     except InvalidAmountException as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     except WalletNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except UnauthorizedWalletAccessException as e:
@@ -82,11 +86,17 @@ async def withdraw(
 ) -> APIResponse[TransactionResponse]:
     try:
         transaction = await service.withdraw.execute(wallet_id, current_user, body)
-        return APIResponse(success=True, message="Retiro realizado", outcome=[transaction])
+        return APIResponse(
+            success=True, message="Retiro realizado", outcome=[transaction]
+        )
     except InvalidAmountException as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     except InsufficientFundsException as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     except WalletNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except UnauthorizedWalletAccessException as e:
@@ -122,7 +132,9 @@ async def get_wallet_transactions(
 ) -> APIResponse[PaginatedTransactionsResponse]:
     try:
         result = await service.get_transactions.execute(current_user, page, page_size)
-        return APIResponse(success=True, message="Transacciones obtenidas", outcome=[result])
+        return APIResponse(
+            success=True, message="Transacciones obtenidas", outcome=[result]
+        )
     except WalletNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -140,12 +152,22 @@ async def transfer(
 ) -> APIResponse[TransactionResponse]:
     try:
         transaction = await service.transfer.execute(from_wallet_id, current_user, body)
-        return APIResponse(success=True, message="Transferencia realizada", outcome=[transaction])
-    except (InvalidAmountException, SameWalletTransferException, InsufficientFundsException) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        return APIResponse(
+            success=True, message="Transferencia realizada", outcome=[transaction]
+        )
+    except (
+        InvalidAmountException,
+        SameWalletTransferException,
+        InsufficientFundsException,
+    ) as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     except WalletNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except InactiveWalletException as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     except UnauthorizedWalletAccessException as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))

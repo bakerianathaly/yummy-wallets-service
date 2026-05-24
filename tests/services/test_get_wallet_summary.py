@@ -17,7 +17,9 @@ from app.models.wallet import Wallet
 
 
 @pytest.fixture
-def summary_service(wallet_repo: WalletRepository, transaction_repo: TransactionRepository) -> GetWalletSummary:
+def summary_service(
+    wallet_repo: WalletRepository, transaction_repo: TransactionRepository
+) -> GetWalletSummary:
     return GetWalletSummary(wallet_repo, transaction_repo)
 
 
@@ -96,7 +98,9 @@ async def test_transacciones_ordenadas_mas_reciente_primero(
     result = await summary_service.execute(created_user)
 
     fechas = [tx.created_at for tx in result.recent_transactions]
-    assert fechas == sorted(fechas, reverse=True), "Las transacciones deben venir de más reciente a más antigua"
+    assert fechas == sorted(fechas, reverse=True), (
+        "Las transacciones deben venir de más reciente a más antigua"
+    )
 
 
 async def test_maximo_10_transacciones_en_summary(

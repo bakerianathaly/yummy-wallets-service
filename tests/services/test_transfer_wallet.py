@@ -20,7 +20,9 @@ from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet import WalletService
 
 
-def _transfer(amount: str, to_wallet_id, key: str = "transfer-key-1") -> TransferRequest:
+def _transfer(
+    amount: str, to_wallet_id, key: str = "transfer-key-1"
+) -> TransferRequest:
     return TransferRequest(
         amount=Decimal(amount),
         to_wallet_id=to_wallet_id,
@@ -28,16 +30,20 @@ def _transfer(amount: str, to_wallet_id, key: str = "transfer-key-1") -> Transfe
     )
 
 
-async def _fund(wallet_service: WalletService, wallet: Wallet, user: User, amount: str) -> None:
+async def _fund(
+    wallet_service: WalletService, wallet: Wallet, user: User, amount: str
+) -> None:
     """Deposita saldo inicial en una wallet para que los tests puedan operar."""
     await wallet_service.deposit.execute(
-        wallet.id, user,
-        DepositRequest(amount=Decimal(amount), idempotency_key=f"fund-{wallet.id}-{amount}"),
+        wallet.id,
+        user,
+        DepositRequest(
+            amount=Decimal(amount), idempotency_key=f"fund-{wallet.id}-{amount}"
+        ),
     )
 
 
 class TestTransferWallet:
-
     # ─── Happy path ────────────────────────────────────────────────────────────
 
     async def test_transferencia_exitosa(
@@ -50,7 +56,8 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "100")
 
         tx_out = await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("40", another_wallet.id),
         )
 
@@ -70,7 +77,8 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "100")
 
         await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("30", another_wallet.id),
         )
 
@@ -88,7 +96,8 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "100")
 
         await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("30", another_wallet.id),
         )
 
@@ -110,7 +119,8 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "100")
 
         tx_out = await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("50", another_wallet.id),
         )
 
@@ -135,7 +145,8 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "50")
 
         tx_out = await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("50", another_wallet.id),
         )
 
@@ -155,7 +166,8 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "10")
 
         tx = await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("0.5", another_wallet.id),
         )
 
@@ -172,7 +184,8 @@ class TestTransferWallet:
 
         with pytest.raises(InvalidAmountException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("0.49", another_wallet.id),
             )
 
@@ -185,7 +198,8 @@ class TestTransferWallet:
     ):
         with pytest.raises(InvalidAmountException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("0", another_wallet.id),
             )
 
@@ -200,7 +214,8 @@ class TestTransferWallet:
         # inversa silenciosa que crearía dinero de la nada.
         with pytest.raises(InvalidAmountException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("-10", another_wallet.id),
             )
 
@@ -215,7 +230,8 @@ class TestTransferWallet:
 
         with pytest.raises(InsufficientFundsException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("20", another_wallet.id),
             )
 
@@ -231,7 +247,8 @@ class TestTransferWallet:
         # transacciones en el historial que confundirían el audit trail.
         with pytest.raises(SameWalletTransferException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("10", created_wallet.id),
             )
 
@@ -243,7 +260,8 @@ class TestTransferWallet:
     ):
         with pytest.raises(WalletNotFoundException):
             await wallet_service.transfer.execute(
-                uuid4(), created_user,
+                uuid4(),
+                created_user,
                 _transfer("10", another_wallet.id),
             )
 
@@ -257,7 +275,8 @@ class TestTransferWallet:
 
         with pytest.raises(WalletNotFoundException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("10", uuid4()),
             )
 
@@ -280,7 +299,8 @@ class TestTransferWallet:
 
         with pytest.raises(InactiveWalletException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("10", wallet_inactiva.id),
             )
 
@@ -295,7 +315,8 @@ class TestTransferWallet:
         # aunque conozca su ID.
         with pytest.raises(UnauthorizedWalletAccessException):
             await wallet_service.transfer.execute(
-                created_wallet.id, another_user,
+                created_wallet.id,
+                another_user,
                 _transfer("10", another_wallet.id),
             )
 
@@ -311,11 +332,13 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "100")
 
         first = await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("40", another_wallet.id, "same-key"),
         )
         second = await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("40", another_wallet.id, "same-key"),
         )
 
@@ -335,11 +358,13 @@ class TestTransferWallet:
         await _fund(wallet_service, created_wallet, created_user, "100")
 
         await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("40", another_wallet.id, "same-key"),
         )
         await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("40", another_wallet.id, "same-key"),
         )
 
@@ -390,7 +415,8 @@ class TestTransferWallet:
         # que en PostgreSQL bloquearía la fila. Aquí en SQLite simplemente ejecuta.
         # Resultado esperado: origen=20, destino=80.
         await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("80", another_wallet.id, "transfer-a"),
         )
 
@@ -404,7 +430,8 @@ class TestTransferWallet:
         # Eso es exactamente lo que queremos que pase.
         with pytest.raises(InsufficientFundsException):
             await wallet_service.transfer.execute(
-                created_wallet.id, created_user,
+                created_wallet.id,
+                created_user,
                 _transfer("80", another_wallet.id, "transfer-b"),
             )
 
@@ -445,13 +472,15 @@ class TestTransferWallet:
 
         # A (created_user) le transfiere 40 a B (another_user)
         await wallet_service.transfer.execute(
-            created_wallet.id, created_user,
+            created_wallet.id,
+            created_user,
             _transfer("40", another_wallet.id, "cross-a-to-b"),
         )
 
         # B (another_user) le transfiere 25 a A (created_user)
         await wallet_service.transfer.execute(
-            another_wallet.id, another_user,
+            another_wallet.id,
+            another_user,
             _transfer("25", created_wallet.id, "cross-b-to-a"),
         )
 

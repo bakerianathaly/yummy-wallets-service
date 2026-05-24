@@ -16,6 +16,7 @@ if config.config_file_name is not None:
 
 # Importar modelos para que SQLModel.metadata los registre
 from app.models.user import User  # noqa: F401
+from app.models.wallet import Wallet, Transaction  # noqa: F401
 
 target_metadata = SQLModel.metadata
 
