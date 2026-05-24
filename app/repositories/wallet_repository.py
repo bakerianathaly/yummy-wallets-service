@@ -1,3 +1,5 @@
+from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
@@ -25,3 +27,11 @@ class WalletRepository:
             select(Wallet).where(Wallet.user_id == user_id)
         )
         return result.scalar_one_or_none()
+
+    async def update_balance(self, wallet: Wallet, new_balance: Decimal) -> Wallet:
+        wallet.balance = new_balance
+        wallet.updated_at = datetime.now()
+        self.db.add(wallet)
+        await self.db.flush()
+        await self.db.refresh(wallet)
+        return wallet

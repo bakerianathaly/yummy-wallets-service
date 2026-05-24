@@ -28,3 +28,11 @@ class WalletAlreadyExistsException(Exception):
 
 class WalletNotFoundException(Exception):
     pass
+
+
+class InvalidAmountException(Exception):
+    pass
+
+
+class UnauthorizedWalletAccessException(Exception):
+    pass

@@ -7,6 +7,7 @@ from sqlmodel import SQLModel
 from app.auth.security import hash_password
 from app.models.user import User, UserCreate
 from app.models.wallet import Wallet
+from app.repositories.transaction_repository import TransactionRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.wallet_repository import WalletRepository
 from app.services.user import UserService
@@ -65,9 +66,16 @@ def wallet_repo_fixture(db_session: AsyncSession) -> WalletRepository:
     return WalletRepository(db_session)
 
 
+@pytest.fixture(name="transaction_repo")
+def transaction_repo_fixture(db_session: AsyncSession) -> TransactionRepository:
+    return TransactionRepository(db_session)
+
+
 @pytest.fixture(name="wallet_service")
-def wallet_service_fixture(wallet_repo: WalletRepository) -> WalletService:
-    return WalletService(wallet_repo)
+def wallet_service_fixture(
+    wallet_repo: WalletRepository, transaction_repo: TransactionRepository
+) -> WalletService:
+    return WalletService(wallet_repo, transaction_repo)
 
 
 @pytest.fixture(name="created_user")
@@ -96,3 +104,26 @@ async def inactive_user_fixture(db_session: AsyncSession) -> User:
     await db_session.commit()
     await db_session.refresh(user)
     return user
+
+
+@pytest.fixture(name="another_user")
+async def another_user_fixture(db_session: AsyncSession) -> User:
+    user = User(
+        email="another@yummy.com",
+        full_name="Another User",
+        hashed_password=hash_password("Password123"),
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture(name="created_wallet")
+async def created_wallet_fixture(db_session: AsyncSession, created_user: User) -> Wallet:
+    wallet = Wallet(user_id=created_user.id)
+    db_session.add(wallet)
+    await db_session.commit()
+    await db_session.refresh(wallet)
+    return wallet
