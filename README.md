@@ -125,12 +125,12 @@ Todos bajo el prefijo `/api/v1` excepto `/health`.
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/api/v1/wallets/` | Crear wallet (una por usuario) |
+| `POST` | `/api/v1/wallets/` | Crear wallet (una por usuario) del ususario logeado (el que viaja en el token) |
 | `POST` | `/api/v1/wallets/{id}/deposit` | Depositar dinero |
 | `POST` | `/api/v1/wallets/{id}/withdraw` | Retirar dinero |
 | `POST` | `/api/v1/wallets/{id}/transfer` | Transferir a otra wallet |
-| `GET` | `/api/v1/wallets/me` | Saldo actual + últimas 10 transacciones |
-| `GET` | `/api/v1/wallets/me/transactions` | Historial paginado (`?page=1&page_size=20`) |
+| `GET` | `/api/v1/wallets/me` | Saldo actual + últimas 10 transacciones del ususario logeado (el que viaja en el token) |
+| `GET` | `/api/v1/wallets/me/transactions` | Historial paginado (`?page=1&page_size=20`) del ususario logeado (el que viaja en el token) |
 
 ### Cómo autenticarse
 

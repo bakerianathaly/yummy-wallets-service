@@ -1,0 +1,259 @@
+{
+  "info": {
+    "name": "Yummy Wallet API",
+    "description": "Colección completa para probar todos los endpoints de Yummy Wallet.\n\n**Cómo usar:**\n1. Asegúrate de que el servidor esté corriendo en http://localhost:8020\n2. Ejecuta **Register** para crear un usuario\n3. Ejecuta **Login** — el token se guarda automáticamente en la variable `token`\n4. Ejecuta **Crear Wallet** — el wallet_id se guarda automáticamente en `wallet_id`\n5. A partir de ahí todos los demás endpoints funcionan sin configuración manual",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8020",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wallet_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "another_wallet_id",
+      "value": "",
+      "type": "string",
+      "description": "Pegar aquí el wallet_id de otro usuario para probar transferencias"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@yummy.com\",\n  \"full_name\": \"María García\",\n  \"password\": \"Password123\"\n}"
+            },
+            "description": "Crea una cuenta nueva. El email debe ser único."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.outcome && res.outcome[0] && res.outcome[0].access_token) {",
+                  "    pm.collectionVariables.set('token', res.outcome[0].access_token);",
+                  "    console.log('Token guardado automáticamente.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@yummy.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "description": "Inicia sesión. El token JWT se guarda automáticamente en la variable `token` de la colección."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "me"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"María García Actualizada\"\n}"
+            },
+            "description": "Actualiza nombre, email o contraseña del usuario autenticado. Todos los campos son opcionales."
+          }
+        },
+        {
+          "name": "Eliminar usuario (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "me"]
+            },
+            "description": "Desactiva la cuenta. El usuario queda en la base de datos con is_active=false (soft delete)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        {
+          "name": "Crear Wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.outcome && res.outcome[0] && res.outcome[0].id) {",
+                  "    pm.collectionVariables.set('wallet_id', res.outcome[0].id);",
+                  "    console.log('wallet_id guardado: ' + res.outcome[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallets/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallets", ""]
+            },
+            "description": "Crea la wallet del usuario autenticado. Solo se puede crear una por usuario. El wallet_id se guarda automáticamente en la variable `wallet_id`."
+          }
+        },
+        {
+          "name": "Consultar saldo (home)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallets/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallets", "me"]
+            },
+            "description": "Devuelve el saldo actual + las últimas 10 transacciones. Es el endpoint de la pantalla principal."
+          }
+        },
+        {
+          "name": "Historial de transacciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallets/me/transactions?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallets", "me", "transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "20" }
+              ]
+            },
+            "description": "Historial completo paginado. Cambiar `page` y `page_size` según necesidad. Máximo page_size: 100."
+          }
+        },
+        {
+          "name": "Depositar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallets/{{wallet_id}}/deposit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallets", "{{wallet_id}}", "deposit"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.00,\n  \"idempotency_key\": \"{{$guid}}\",\n  \"description\": \"Depósito de prueba\"\n}"
+            },
+            "description": "Deposita dinero en la wallet. `idempotency_key` usa `{{$guid}}` que Postman genera automáticamente como UUID único por request. Si se reenvía el mismo request con la misma key, el dinero no se acredita dos veces."
+          }
+        },
+        {
+          "name": "Retirar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallets/{{wallet_id}}/withdraw",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallets", "{{wallet_id}}", "withdraw"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 10.00,\n  \"idempotency_key\": \"{{$guid}}\",\n  \"description\": \"Retiro de prueba\"\n}"
+            },
+            "description": "Retira dinero de la wallet. Falla con 422 si el saldo es insuficiente. El monto mínimo es 0.50."
+          }
+        },
+        {
+          "name": "Transferir",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallets/{{wallet_id}}/transfer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallets", "{{wallet_id}}", "transfer"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to_wallet_id\": \"{{another_wallet_id}}\",\n  \"amount\": 25.00,\n  \"idempotency_key\": \"{{$guid}}\",\n  \"description\": \"Transferencia de prueba\"\n}"
+            },
+            "description": "Transfiere dinero a otra wallet. Requiere que la variable `another_wallet_id` esté configurada con el UUID de la wallet destino.\n\nPara obtener ese ID: registrar un segundo usuario, hacerle login, crearle wallet y copiar el ID de la respuesta en la variable `another_wallet_id` de la colección."
+          }
+        }
+      ]
+    }
+  ]
+}

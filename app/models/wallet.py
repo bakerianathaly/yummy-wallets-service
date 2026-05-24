@@ -3,7 +3,10 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
+from pydantic import field_serializer
 from sqlmodel import Field, SQLModel
+
+TWO_PLACES = Decimal("0.01")
 
 # ─── Modelos DB ───────────────────────────────────────────────
 
@@ -46,6 +49,10 @@ class WalletResponse(SQLModel):
     created_at: datetime
     updated_at: datetime
 
+    @field_serializer("balance")
+    def round_balance(self, v: Decimal) -> Decimal:
+        return v.quantize(TWO_PLACES)
+
 
 class TransactionResponse(SQLModel):
     id: uuid.UUID
@@ -56,6 +63,10 @@ class TransactionResponse(SQLModel):
     reference_id: Optional[uuid.UUID]
     description: Optional[str]
     created_at: datetime
+
+    @field_serializer("amount", "balance_after")
+    def round_decimals(self, v: Decimal) -> Decimal:
+        return v.quantize(TWO_PLACES)
 
 
 class DepositRequest(SQLModel):
@@ -83,6 +94,10 @@ class WalletSummaryResponse(SQLModel):
     is_active: bool
     created_at: datetime
     recent_transactions: list[TransactionResponse]
+
+    @field_serializer("balance")
+    def round_balance(self, v: Decimal) -> Decimal:
+        return v.quantize(TWO_PLACES)
 
 
 class PaginatedTransactionsResponse(SQLModel):
